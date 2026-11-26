@@ -4,11 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#000000">
-<meta name="description" content="An independent artist world. Enter if you know.">
+<meta name="description" content="When you die, all that’s left is bones.">
 <meta property="og:title" content="The Departure">
 <meta property="og:description" content="A world beyond the surface.">
 <meta property="og:type" content="website">
-<title>The Departure</title>
+<title>SKULLNRUM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&display=swap" rel="stylesheet">
 <style>
 :root{color-scheme:dark;--black:#000;--white:#f4f1e9;--muted:#777;--gold:#a98b5d}
 *{box-sizing:border-box}
@@ -19,7 +22,7 @@ main{overflow:clip}
 .departure{height:280svh;position:relative;background:#000}
 .departure-stage{height:100svh;position:sticky;top:0;overflow:hidden;display:grid;place-items:center;background:#000}
 .mark{position:absolute;left:50%;top:50%;width:min(68vw,467px);height:auto;display:block;transform:translate(-50%,-50%);will-change:transform,opacity;filter:contrast(1.04)}
-.hint{position:absolute;bottom:clamp(24px,6vh,58px);left:0;right:0;text-align:center;color:#777;font:10px/1.5 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase;opacity:.72;transition:opacity .2s}
+.hint{position:absolute;bottom:clamp(28px,7vh,68px);left:5vw;right:5vw;max-width:900px;margin:auto;text-align:center;color:#fff;font:clamp(23px,4.2vw,46px)/1.18 "Pirata One",Georgia,serif;letter-spacing:.025em;text-transform:uppercase;opacity:.96;transition:opacity .2s;text-shadow:0 2px 18px rgba(255,255,255,.08)}
 .rum-content{position:absolute;inset:0;z-index:2;display:grid;align-content:center;justify-items:center;gap:clamp(12px,3vh,28px);text-align:center;pointer-events:none;opacity:0;will-change:opacity}
 .rum-bottle{width:min(42vw,250px);max-height:53svh;object-fit:contain;cursor:pointer;filter:drop-shadow(0 16px 35px #000);transform:scale(.08);opacity:.04;will-change:transform,opacity;transition:filter .45s;pointer-events:auto}
 .rum-bottle:hover,.rum-bottle:focus-visible{filter:drop-shadow(0 18px 36px #4b3218)}
@@ -46,7 +49,7 @@ main{overflow:clip}
 .submit:hover{background:#292015}
 .fineprint,.form-message{color:#777;font:11px/1.7 Arial,sans-serif}
 .form-message{min-height:18px;color:#c9b58e}
-@media(max-width:600px){.mark{width:min(82vw,467px)}.hint{letter-spacing:.25em}.rum-bottle{width:min(58vw,220px)}}
+@media(max-width:600px){.mark{width:min(82vw,467px)}.hint{font-size:clamp(25px,7vw,34px);letter-spacing:0}.rum-bottle{width:min(58vw,220px)}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.hint{transition:none}}
 </style>
 </head>
@@ -55,7 +58,7 @@ main{overflow:clip}
 <section class="departure" id="departure" aria-label="The Departure and the bottle">
  <div class="departure-stage" id="departure-stage">
   <img class="mark" id="bird" src="assets/bird-skull.png" alt="A white bird carrying a skull against a black field">
-  <div class="hint" id="hint">Scroll to enter</div>
+  <div class="hint" id="hint">When you die,<br>all that’s left is bones.</div>
   <div class="rum-content" id="rum-content">
   <div class="rum-label">A message in a bottle</div>
   <button class="bottle-button" id="open-auth" aria-label="Open the rum bottle to enter the crew">
