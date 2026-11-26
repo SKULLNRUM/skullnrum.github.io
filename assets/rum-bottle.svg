@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 620" role="img" aria-labelledby="title desc">
+<title id="title">The rum bottle</title><desc id="desc">An antique dark glass rum bottle with a pale skull-and-crossbones seal.</desc>
+<defs>
+ <linearGradient id="glass" x1="0" x2="1"><stop stop-color="#080909"/><stop offset=".24" stop-color="#24231d"/><stop offset=".52" stop-color="#090b0a"/><stop offset=".82" stop-color="#30271b"/><stop offset="1" stop-color="#080909"/></linearGradient>
+ <linearGradient id="amber" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#6e431d"/><stop offset="1" stop-color="#24170d"/></linearGradient>
+ <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+</defs>
+<ellipse cx="180" cy="574" rx="112" ry="18" fill="#b58a4d" opacity=".13" filter="url(#glow)"/>
+<path d="M145 38h70v94c0 18 13 30 35 43 42 25 62 62 62 112v192c0 54-31 83-82 83h-100c-51 0-82-29-82-83V287c0-50 20-87 62-112 22-13 35-25 35-43z" fill="url(#glass)" stroke="#9b8156" stroke-width="5"/>
+<path d="M153 42h54v94h-54z" fill="#171713" stroke="#9b8156" stroke-width="4"/>
+<path d="M140 30h80v20h-80z" fill="#171713" stroke="#b39a70" stroke-width="4"/>
+<path d="M145 15h70v18h-70z" fill="#24221b" stroke="#b39a70" stroke-width="3"/>
+<path d="M78 337c49 18 155 18 204 0v143c0 35-23 54-56 54h-92c-33 0-56-19-56-54z" fill="url(#amber)" opacity=".75"/>
+<path d="M112 210c-23 25-32 52-32 91v183c0 34 13 50 33 59" fill="none" stroke="#8c8064" stroke-width="8" opacity=".23"/>
+<path d="M244 220c22 29 30 56 30 91v164c0 28-9 45-25 57" fill="none" stroke="#d1b27b" stroke-width="5" opacity=".16"/>
+<path d="M81 286q99 25 198 0v174q-99 26-198 0z" fill="#0b0b09" stroke="#a18b63" stroke-width="3"/>
+<path d="M92 299q89 20 176 0v146q-87 22-176 0z" fill="none" stroke="#6e5a3b" stroke-width="2"/>
+<g fill="#e5ddc9" transform="translate(180 367)">
+ <path d="M-25-26c-12 7-19 19-19 33 0 18 13 31 31 31h26c18 0 31-13 31-31 0-14-7-26-19-33-13-8-37-8-50 0z"/>
+ <path d="M-18 34l-7 13 14-5 11 8 10-8 14 5-7-13" />
+ <path d="M-12-6l-8-7-5 13 13 8zM12-6l8-7 5 13-13 8z" fill="#171613"/>
+ <path d="M-7 16h14v12H-7z" fill="#171613"/>
+</g>
+<path d="M180 320v-18m-12 9h24" stroke="#e5ddc9" stroke-width="3"/>
+</svg>
