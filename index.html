@@ -16,15 +16,14 @@ html{background:var(--black);scroll-behavior:smooth}
 body{margin:0;background:var(--black);color:var(--white);font-family:Georgia,'Times New Roman',serif}
 body.modal-open{overflow:hidden}
 main{overflow:clip}
-.departure{height:190svh;position:relative;background:#000}
+.departure{height:280svh;position:relative;background:#000}
 .departure-stage{height:100svh;position:sticky;top:0;overflow:hidden;display:grid;place-items:center;background:#000}
 .mark{position:absolute;left:50%;top:50%;width:min(68vw,467px);height:auto;display:block;transform:translate(-50%,-50%);will-change:transform,opacity;filter:contrast(1.04)}
 .hint{position:absolute;bottom:clamp(24px,6vh,58px);left:0;right:0;text-align:center;color:#777;font:10px/1.5 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase;opacity:.72;transition:opacity .2s}
-.rum-room{height:175svh;position:relative;background:#000;border-top:1px solid #090909}
-.rum-stage{height:100svh;position:sticky;top:0;overflow:hidden;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 58%,#0b0b09 0%,#030303 34%,#000 72%)}
-.rum-content{position:relative;z-index:1;display:grid;justify-items:center;gap:clamp(12px,3vh,28px);text-align:center;will-change:transform,opacity}
-.rum-bottle{width:min(42vw,250px);max-height:53svh;object-fit:contain;cursor:pointer;filter:drop-shadow(0 16px 35px #000);transform:scale(.08);opacity:.04;will-change:transform,opacity;transition:filter .45s}
+.rum-content{position:absolute;inset:0;z-index:2;display:grid;align-content:center;justify-items:center;gap:clamp(12px,3vh,28px);text-align:center;pointer-events:none;opacity:0;will-change:opacity}
+.rum-bottle{width:min(42vw,250px);max-height:53svh;object-fit:contain;cursor:pointer;filter:drop-shadow(0 16px 35px #000);transform:scale(.08);opacity:.04;will-change:transform,opacity;transition:filter .45s;pointer-events:auto}
 .rum-bottle:hover,.rum-bottle:focus-visible{filter:drop-shadow(0 18px 36px #4b3218)}
+.departure-stage.bottle-phase{background:radial-gradient(ellipse at 50% 54%,#0b0b09 0%,#030303 34%,#000 72%)}
 .rum-label{color:#b9a27d;font:10px/1.6 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase}
 .rum-title{margin:0;font-size:clamp(24px,4vw,42px);font-weight:400;letter-spacing:.06em}
 .rum-copy{margin:0;color:#777;font:12px/1.8 Arial,sans-serif;letter-spacing:.12em}
@@ -53,22 +52,18 @@ main{overflow:clip}
 </head>
 <body>
 <main>
-<section class="departure" id="departure" aria-label="The Departure">
- <div class="departure-stage">
+<section class="departure" id="departure" aria-label="The Departure and the bottle">
+ <div class="departure-stage" id="departure-stage">
   <img class="mark" id="bird" src="assets/bird-skull.png" alt="A white bird carrying a skull against a black field">
   <div class="hint" id="hint">Scroll to enter</div>
- </div>
-</section>
-<section class="rum-room" id="rum-room" aria-label="The rum bottle entrance">
- <div class="rum-stage">
- <div class="rum-content" id="rum-content">
+  <div class="rum-content" id="rum-content">
   <div class="rum-label">A message in a bottle</div>
   <button class="bottle-button" id="open-auth" aria-label="Open the rum bottle to enter the crew">
    <img class="rum-bottle" src="assets/rum-bottle.svg" alt="An antique dark rum bottle with a skull seal">
   </button>
   <h1 class="rum-title">Find your way aboard.</h1>
   <p class="rum-copy">Open the bottle to enter the crew.</p>
- </div>
+  </div>
  </div>
 </section>
 </main>
@@ -94,44 +89,36 @@ main{overflow:clip}
 <script>
 (() => {
  const departure=document.getElementById('departure');
+ const stage=document.getElementById('departure-stage');
  const bird=document.getElementById('bird');
  const hint=document.getElementById('hint');
- const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
- let ticking=false;
- function paint(){
-  const range=departure.offsetHeight-window.innerHeight;
-  const progress=reduce?0:Math.max(0,Math.min(1,(window.scrollY-departure.offsetTop)/range));
-  const x=window.innerWidth*.48*progress;
-  const y=-window.innerHeight*.46*progress;
-  const scale=1-.88*progress;
-  bird.style.transform='translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px)) scale('+scale+')';
-  bird.style.opacity=String(1-Math.max(0,(progress-.78)/.22));
-  hint.style.opacity=String(1-Math.min(1,progress*4));
-  ticking=false;
- }
- window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(paint);ticking=true;}},{passive:true});
- window.addEventListener('resize',paint);paint();
-
- // The bottle is held in a sticky, full-screen abyss scene. Scrolling
- // brings it forward from a tiny distant silhouette into its full-size reveal.
- const rumRoom=document.getElementById('rum-room');
  const bottle=document.querySelector('.rum-bottle');
  const rumContent=document.getElementById('rum-content');
- let rumTicking=false;
- function paintBottle(){
-  const start=rumRoom.offsetTop;
-  const distance=Math.max(1,rumRoom.offsetHeight-window.innerHeight);
-  const p=reduce?1:Math.max(0,Math.min(1,(window.scrollY-start)/distance));
-  const eased=p*p*(3-2*p);
-  const scale=.08+(.92*eased);
-  bottle.style.transform='scale('+scale+')';
-  bottle.style.opacity=String(.04+(.96*Math.min(1,p*2.1)));
-  rumContent.style.opacity=String(.25+.75*Math.min(1,p*1.8));
-  rumContent.style.transform='translateY('+((1-p)*24)+'px)';
-  rumTicking=false;
+ const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let ticking=false;
+ function paintScene(){
+  const travel=Math.max(1,window.innerHeight);
+  const raw=(window.scrollY-departure.offsetTop)/travel;
+  const birdProgress=reduce?1:Math.max(0,Math.min(1,raw));
+  const bottleProgress=reduce?1:Math.max(0,Math.min(1,raw-1));
+  // Preserve the original bird's exact diagonal flight and scale behavior.
+  const x=window.innerWidth*.48*birdProgress;
+  const y=-window.innerHeight*.46*birdProgress;
+  const birdScale=1-.88*birdProgress;
+  bird.style.transform='translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px)) scale('+birdScale+')';
+  bird.style.opacity=String(1-Math.max(0,(birdProgress-.78)/.22));
+  hint.style.opacity=String(1-Math.min(1,birdProgress*4));
+  // Once the bird has cleared the frame, the bottle grows forward from the same screen center.
+  const eased=bottleProgress*bottleProgress*(3-2*bottleProgress);
+  bottle.style.transform='scale('+(0.055+.945*eased)+')';
+  bottle.style.opacity=String(.025+.975*Math.min(1,bottleProgress*2.15));
+  rumContent.style.opacity=String(Math.min(1,bottleProgress*2.3));
+  rumContent.style.pointerEvents=bottleProgress>.88?'auto':'none';
+  stage.classList.toggle('bottle-phase',bottleProgress>0);
+  ticking=false;
  }
- window.addEventListener('scroll',()=>{if(!rumTicking){requestAnimationFrame(paintBottle);rumTicking=true;}},{passive:true});
- window.addEventListener('resize',paintBottle);paintBottle();
+ window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(paintScene);ticking=true;}},{passive:true});
+ window.addEventListener('resize',paintScene);paintScene();
 
  const modal=document.getElementById('auth-modal');
  const open=document.getElementById('open-auth');
