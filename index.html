@@ -20,10 +20,11 @@ main{overflow:clip}
 .departure-stage{height:100svh;position:sticky;top:0;overflow:hidden;display:grid;place-items:center;background:#000}
 .mark{position:absolute;left:50%;top:50%;width:min(68vw,467px);height:auto;display:block;transform:translate(-50%,-50%);will-change:transform,opacity;filter:contrast(1.04)}
 .hint{position:absolute;bottom:clamp(24px,6vh,58px);left:0;right:0;text-align:center;color:#777;font:10px/1.5 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase;opacity:.72;transition:opacity .2s}
-.rum-room{min-height:100svh;position:relative;display:grid;place-items:center;padding:10vh 7vw;background:radial-gradient(ellipse at 50% 48%,#10100e 0%,#050505 36%,#000 72%);border-top:1px solid #171717}
-.rum-content{display:grid;justify-items:center;gap:clamp(12px,3vh,28px);text-align:center}
-.rum-bottle{width:min(42vw,250px);max-height:53svh;object-fit:contain;cursor:pointer;filter:drop-shadow(0 16px 35px #000);transition:transform .55s cubic-bezier(.2,.8,.2,1),filter .55s}
-.rum-bottle:hover,.rum-bottle:focus-visible{transform:translateY(-9px) rotate(-2deg);filter:drop-shadow(0 18px 36px #4b3218)}
+.rum-room{height:175svh;position:relative;background:#000;border-top:1px solid #090909}
+.rum-stage{height:100svh;position:sticky;top:0;overflow:hidden;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 58%,#0b0b09 0%,#030303 34%,#000 72%)}
+.rum-content{position:relative;z-index:1;display:grid;justify-items:center;gap:clamp(12px,3vh,28px);text-align:center;will-change:transform,opacity}
+.rum-bottle{width:min(42vw,250px);max-height:53svh;object-fit:contain;cursor:pointer;filter:drop-shadow(0 16px 35px #000);transform:scale(.08);opacity:.04;will-change:transform,opacity;transition:filter .45s}
+.rum-bottle:hover,.rum-bottle:focus-visible{filter:drop-shadow(0 18px 36px #4b3218)}
 .rum-label{color:#b9a27d;font:10px/1.6 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase}
 .rum-title{margin:0;font-size:clamp(24px,4vw,42px);font-weight:400;letter-spacing:.06em}
 .rum-copy{margin:0;color:#777;font:12px/1.8 Arial,sans-serif;letter-spacing:.12em}
@@ -46,8 +47,8 @@ main{overflow:clip}
 .submit:hover{background:#292015}
 .fineprint,.form-message{color:#777;font:11px/1.7 Arial,sans-serif}
 .form-message{min-height:18px;color:#c9b58e}
-@media(max-width:600px){.mark{width:min(82vw,467px)}.hint{letter-spacing:.25em}.rum-bottle{width:min(58vw,220px)}.rum-room{padding-inline:5vw}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rum-bottle,.hint{transition:none}}
+@media(max-width:600px){.mark{width:min(82vw,467px)}.hint{letter-spacing:.25em}.rum-bottle{width:min(58vw,220px)}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.hint{transition:none}}
 </style>
 </head>
 <body>
@@ -59,13 +60,15 @@ main{overflow:clip}
  </div>
 </section>
 <section class="rum-room" id="rum-room" aria-label="The rum bottle entrance">
- <div class="rum-content">
+ <div class="rum-stage">
+ <div class="rum-content" id="rum-content">
   <div class="rum-label">A message in a bottle</div>
   <button class="bottle-button" id="open-auth" aria-label="Open the rum bottle to enter the crew">
    <img class="rum-bottle" src="assets/rum-bottle.svg" alt="An antique dark rum bottle with a skull seal">
   </button>
   <h1 class="rum-title">Find your way aboard.</h1>
   <p class="rum-copy">Open the bottle to enter the crew.</p>
+ </div>
  </div>
 </section>
 </main>
@@ -108,6 +111,27 @@ main{overflow:clip}
  }
  window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(paint);ticking=true;}},{passive:true});
  window.addEventListener('resize',paint);paint();
+
+ // The bottle is held in a sticky, full-screen abyss scene. Scrolling
+ // brings it forward from a tiny distant silhouette into its full-size reveal.
+ const rumRoom=document.getElementById('rum-room');
+ const bottle=document.querySelector('.rum-bottle');
+ const rumContent=document.getElementById('rum-content');
+ let rumTicking=false;
+ function paintBottle(){
+  const start=rumRoom.offsetTop;
+  const distance=Math.max(1,rumRoom.offsetHeight-window.innerHeight);
+  const p=reduce?1:Math.max(0,Math.min(1,(window.scrollY-start)/distance));
+  const eased=p*p*(3-2*p);
+  const scale=.08+(.92*eased);
+  bottle.style.transform='scale('+scale+')';
+  bottle.style.opacity=String(.04+(.96*Math.min(1,p*2.1)));
+  rumContent.style.opacity=String(.25+.75*Math.min(1,p*1.8));
+  rumContent.style.transform='translateY('+((1-p)*24)+'px)';
+  rumTicking=false;
+ }
+ window.addEventListener('scroll',()=>{if(!rumTicking){requestAnimationFrame(paintBottle);rumTicking=true;}},{passive:true});
+ window.addEventListener('resize',paintBottle);paintBottle();
 
  const modal=document.getElementById('auth-modal');
  const open=document.getElementById('open-auth');
