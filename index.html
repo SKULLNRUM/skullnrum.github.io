@@ -28,7 +28,7 @@ main{overflow:clip}
 .rum-bottle:hover,.rum-bottle:focus-visible{filter:drop-shadow(0 18px 36px #4b3218)}
 .departure-stage.bottle-phase{background:radial-gradient(ellipse at 50% 54%,#0b0b09 0%,#030303 34%,#000 72%)}
 .rum-label{color:#b9a27d;font:10px/1.6 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase}
-.rum-title{margin:0;font-size:clamp(24px,4vw,42px);font-weight:400;letter-spacing:.06em}
+.rum-title{margin:0;color:#fff;font:clamp(25px,4.2vw,46px)/1.18 "Pirata One",Georgia,serif;letter-spacing:.025em;text-transform:uppercase;padding:0 16px}
 .rum-copy{margin:0;color:#777;font:12px/1.8 Arial,sans-serif;letter-spacing:.12em}
 .bottle-button{appearance:none;border:0;background:transparent;color:inherit;padding:0;cursor:pointer}
 .bottle-button:focus-visible{outline:1px solid var(--gold);outline-offset:12px}
@@ -58,14 +58,14 @@ main{overflow:clip}
 <section class="departure" id="departure" aria-label="The Departure and the bottle">
  <div class="departure-stage" id="departure-stage">
   <img class="mark" id="bird" src="assets/bird-skull.png" alt="A white bird carrying a skull against a black field">
-  <div class="hint" id="hint">When you die,<br>all that’s left is bones.</div>
+  <div class="hint" id="hint" hidden></div>
   <div class="rum-content" id="rum-content">
-  <div class="rum-label">A message in a bottle</div>
+  
   <button class="bottle-button" id="open-auth" aria-label="Open the rum bottle to enter the crew">
    <img class="rum-bottle" src="assets/rum-bottle.svg" alt="An antique dark rum bottle with a skull seal">
   </button>
   <h1 class="rum-title">When you die, all that’s left is bones.</h1>
-  <p class="rum-copy">Open the bottle to enter the crew.</p>
+  
   </div>
  </div>
 </section>
