@@ -10,30 +10,136 @@
 <meta property="og:type" content="website">
 <title>The Departure</title>
 <style>
-:root{color-scheme:dark;--black:#000;--white:#f4f1e9}
+:root{color-scheme:dark;--black:#000;--white:#f4f1e9;--muted:#777;--gold:#a98b5d}
 *{box-sizing:border-box}
 html{background:var(--black);scroll-behavior:smooth}
 body{margin:0;background:var(--black);color:var(--white);font-family:Georgia,'Times New Roman',serif}
-main{min-height:100svh;overflow:hidden}
-.departure{min-height:100svh;position:relative;display:grid;place-items:center;background:#000}
-.mark{width:min(68vw,467px);height:auto;display:block;image-rendering:auto;filter:contrast(1.04);animation:drift 12s ease-in-out infinite alternate}
-@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(3vw,-2vh) scale(.88)}}
-.hint{position:absolute;bottom:clamp(24px,6vh,58px);left:0;right:0;text-align:center;color:#777;font:10px/1.5 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase;opacity:.72}
-.next{min-height:100svh;display:grid;place-items:center;padding:12vw 8vw;background:#050505;border-top:1px solid #171717}
-.next p{max-width:34rem;color:#777;text-align:center;font:clamp(12px,1.5vw,15px)/2 Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase}
-@media(max-width:600px){.mark{width:min(82vw,467px)}.hint{letter-spacing:.25em}}
-@media(prefers-reduced-motion:reduce){.mark{animation:none}}
+body.modal-open{overflow:hidden}
+main{overflow:clip}
+.departure{height:190svh;position:relative;background:#000}
+.departure-stage{height:100svh;position:sticky;top:0;overflow:hidden;display:grid;place-items:center;background:#000}
+.mark{position:absolute;left:50%;top:50%;width:min(68vw,467px);height:auto;display:block;transform:translate(-50%,-50%);will-change:transform,opacity;filter:contrast(1.04)}
+.hint{position:absolute;bottom:clamp(24px,6vh,58px);left:0;right:0;text-align:center;color:#777;font:10px/1.5 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase;opacity:.72;transition:opacity .2s}
+.rum-room{min-height:100svh;position:relative;display:grid;place-items:center;padding:10vh 7vw;background:radial-gradient(ellipse at 50% 48%,#10100e 0%,#050505 36%,#000 72%);border-top:1px solid #171717}
+.rum-content{display:grid;justify-items:center;gap:clamp(12px,3vh,28px);text-align:center}
+.rum-bottle{width:min(42vw,250px);max-height:53svh;object-fit:contain;cursor:pointer;filter:drop-shadow(0 16px 35px #000);transition:transform .55s cubic-bezier(.2,.8,.2,1),filter .55s}
+.rum-bottle:hover,.rum-bottle:focus-visible{transform:translateY(-9px) rotate(-2deg);filter:drop-shadow(0 18px 36px #4b3218)}
+.rum-label{color:#b9a27d;font:10px/1.6 Arial,sans-serif;letter-spacing:.34em;text-transform:uppercase}
+.rum-title{margin:0;font-size:clamp(24px,4vw,42px);font-weight:400;letter-spacing:.06em}
+.rum-copy{margin:0;color:#777;font:12px/1.8 Arial,sans-serif;letter-spacing:.12em}
+.bottle-button{appearance:none;border:0;background:transparent;color:inherit;padding:0;cursor:pointer}
+.bottle-button:focus-visible{outline:1px solid var(--gold);outline-offset:12px}
+.modal-backdrop{position:fixed;inset:0;z-index:10;display:none;place-items:center;padding:20px;background:rgba(0,0,0,.84);backdrop-filter:blur(8px)}
+.modal-backdrop.open{display:grid}
+.auth-panel{position:relative;width:min(100%,430px);padding:clamp(26px,6vw,46px);border:1px solid #393329;background:#090908;box-shadow:0 24px 90px #000}
+.close{position:absolute;right:16px;top:13px;border:0;background:none;color:#aaa;font-size:24px;cursor:pointer}
+.auth-kicker{margin:0 0 12px;color:var(--gold);font:9px Arial,sans-serif;letter-spacing:.3em;text-transform:uppercase}
+.auth-title{margin:0 0 24px;font-size:30px;font-weight:400}
+.tabs{display:flex;gap:22px;border-bottom:1px solid #302c25;margin-bottom:24px}
+.tab{padding:0 0 12px;border:0;border-bottom:1px solid transparent;background:none;color:#777;font:10px Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
+.tab[aria-selected="true"]{color:#eee;border-color:var(--gold)}
+.field{display:grid;gap:8px;margin:15px 0}
+.field label{color:#9b9488;font:9px Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.field input{width:100%;padding:13px 12px;border:1px solid #39352e;background:#030303;color:#f4f1e9;font:14px Arial,sans-serif;border-radius:0}
+.field input:focus{outline:1px solid var(--gold);border-color:var(--gold)}
+.submit{width:100%;margin-top:12px;padding:15px;border:1px solid #8b754f;background:#17130e;color:#e9ddc8;font:10px Arial,sans-serif;letter-spacing:.2em;text-transform:uppercase;cursor:pointer}
+.submit:hover{background:#292015}
+.fineprint,.form-message{color:#777;font:11px/1.7 Arial,sans-serif}
+.form-message{min-height:18px;color:#c9b58e}
+@media(max-width:600px){.mark{width:min(82vw,467px)}.hint{letter-spacing:.25em}.rum-bottle{width:min(58vw,220px)}.rum-room{padding-inline:5vw}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rum-bottle,.hint{transition:none}}
 </style>
 </head>
 <body>
 <main>
-<section class="departure" aria-label="The Departure">
-<img class="mark" src="assets/bird-skull.png" alt="A white bird carrying a skull against a black field">
-<div class="hint">Scroll to enter</div>
+<section class="departure" id="departure" aria-label="The Departure">
+ <div class="departure-stage">
+  <img class="mark" id="bird" src="assets/bird-skull.png" alt="A white bird carrying a skull against a black field">
+  <div class="hint" id="hint">Scroll to enter</div>
+ </div>
 </section>
-<section class="next" aria-label="Beyond the departure">
-<p>The tide is turning.</p>
+<section class="rum-room" id="rum-room" aria-label="The rum bottle entrance">
+ <div class="rum-content">
+  <div class="rum-label">A message in a bottle</div>
+  <button class="bottle-button" id="open-auth" aria-label="Open the rum bottle to enter the crew">
+   <img class="rum-bottle" src="assets/rum-bottle.svg" alt="An antique dark rum bottle with a skull seal">
+  </button>
+  <h1 class="rum-title">Find your way aboard.</h1>
+  <p class="rum-copy">Open the bottle to enter the crew.</p>
+ </div>
 </section>
 </main>
+<div class="modal-backdrop" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+ <div class="auth-panel">
+  <button class="close" id="close-auth" aria-label="Close">×</button>
+  <p class="auth-kicker">The crew</p>
+  <h2 class="auth-title" id="auth-title">Come aboard.</h2>
+  <div class="tabs" role="tablist" aria-label="Account access">
+   <button class="tab" id="signin-tab" role="tab" aria-selected="true" aria-controls="auth-form">Sign in</button>
+   <button class="tab" id="create-tab" role="tab" aria-selected="false" aria-controls="auth-form">Create account</button>
+  </div>
+  <form id="auth-form">
+   <div class="field" id="name-field" hidden><label for="display-name">Crew name</label><input id="display-name" name="displayName" autocomplete="nickname"></div>
+   <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required></div>
+   <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="8" required></div>
+   <button class="submit" id="submit-auth" type="submit">Sign in</button>
+   <p class="form-message" id="form-message" aria-live="polite"></p>
+  </form>
+  <p class="fineprint">The crew's private quarters are still being prepared.</p>
+ </div>
+</div>
+<script>
+(() => {
+ const departure=document.getElementById('departure');
+ const bird=document.getElementById('bird');
+ const hint=document.getElementById('hint');
+ const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let ticking=false;
+ function paint(){
+  const range=departure.offsetHeight-window.innerHeight;
+  const progress=reduce?0:Math.max(0,Math.min(1,(window.scrollY-departure.offsetTop)/range));
+  const x=window.innerWidth*.48*progress;
+  const y=-window.innerHeight*.46*progress;
+  const scale=1-.88*progress;
+  bird.style.transform='translate(calc(-50% + '+x+'px),calc(-50% + '+y+'px)) scale('+scale+')';
+  bird.style.opacity=String(1-Math.max(0,(progress-.78)/.22));
+  hint.style.opacity=String(1-Math.min(1,progress*4));
+  ticking=false;
+ }
+ window.addEventListener('scroll',()=>{if(!ticking){requestAnimationFrame(paint);ticking=true;}},{passive:true});
+ window.addEventListener('resize',paint);paint();
+
+ const modal=document.getElementById('auth-modal');
+ const open=document.getElementById('open-auth');
+ const close=document.getElementById('close-auth');
+ const signin=document.getElementById('signin-tab');
+ const create=document.getElementById('create-tab');
+ const nameField=document.getElementById('name-field');
+ const submit=document.getElementById('submit-auth');
+ const form=document.getElementById('auth-form');
+ const message=document.getElementById('form-message');
+ let mode='signin';
+ function setMode(next){
+  mode=next;const creating=mode==='create';
+  signin.setAttribute('aria-selected',String(!creating));
+  create.setAttribute('aria-selected',String(creating));
+  nameField.hidden=!creating;
+  document.getElementById('display-name').required=creating;
+  document.getElementById('password').autocomplete=creating?'new-password':'current-password';
+  submit.textContent=creating?'Create account':'Sign in';
+  message.textContent='';
+ }
+ function show(){modal.classList.add('open');document.body.classList.add('modal-open');setMode('signin');document.getElementById('email').focus();}
+ function hide(){modal.classList.remove('open');document.body.classList.remove('modal-open');open.focus();}
+ open.addEventListener('click',show);close.addEventListener('click',hide);
+ signin.addEventListener('click',()=>setMode('signin'));create.addEventListener('click',()=>setMode('create'));
+ modal.addEventListener('click',e=>{if(e.target===modal)hide();});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))hide();});
+ form.addEventListener('submit',e=>{
+  e.preventDefault();
+  message.textContent='The account system is not connected yet. Your sign-in details have not been sent or saved.';
+ });
+})();
+</script>
 </body>
 </html>
