@@ -51,7 +51,7 @@ main{overflow:clip}
 .form-message{min-height:18px;color:#c9b58e}
 @media(max-width:600px){.mark{width:min(82vw,467px)}.hint{font-size:clamp(25px,7vw,34px);letter-spacing:0}.bottle-button{width:min(58vw,220px,23svh)}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.hint{transition:none}}
-</style>
+#crew-home{max-width:760px;margin:auto;padding:24px 18px;min-height:100svh}#crew-home header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #333;padding-bottom:18px}#crew-home h1,#crew-home h2{font-family:"Pirata One",Georgia,serif;font-weight:400}#crew-home button{cursor:pointer;background:#111;color:white;border:1px solid #444;padding:10px}#crew-home input,#crew-home textarea{width:100%;background:#090909;color:white;border:1px solid #444;padding:12px;font:16px Georgia}#avatar-options{display:flex;flex-wrap:wrap;gap:10px}#avatar-options button{padding:3px}#avatar-options img,#profile-avatar{width:72px;height:72px;object-fit:contain;background:black}#avatar-options button[aria-pressed=true]{border-color:white}#profile-avatar{width:110px;height:110px}#crew-home section{padding:20px 0;border-bottom:1px solid #333}#crew-home p{white-space:pre-wrap}#member-results{display:grid;gap:8px}</style>
 </head>
 <body>
 <main>
@@ -69,7 +69,7 @@ main{overflow:clip}
   </div>
  </div>
 </section>
-</main>
+</main><div id="crew-home" hidden><header><h1>Dead Air</h1><button id="profile-toggle">Profile</button><button id="home-signout">Sign out</button></header><section id="owner-profile" hidden><img id="profile-avatar" alt="Selected avatar"><h2 id="profile-name"></h2><p id="profile-role"></p><div id="avatar-options"></div><label for="profile-bio">Biography</label><textarea id="profile-bio" maxlength="2000" rows="4"></textarea><button id="save-profile">Save profile</button><p id="profile-status" role="status"></p></section><section><label for="member-search">Find a soul</label><input id="member-search" placeholder="Search usernames" maxlength="24"><div id="member-results"></div></section><section><h2>The Feed</h2><p>Dead Air is quiet for now. Posting and friend requests are not open yet.</p></section></div>
 <div class="modal-backdrop" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
  <div class="auth-panel">
   <button class="close" id="close-auth" aria-label="Close">×</button>
@@ -138,11 +138,28 @@ main{overflow:clip}
  const account=document.getElementById('account-view');
  const tabs=modal.querySelector('.tabs');
  const title=document.getElementById('auth-title');
+ const home=document.getElementById('crew-home'), intro=document.querySelector('main'), panel=document.getElementById('owner-profile'), status=document.getElementById('profile-status');
+ const avatars=["assets/IMG_2269.jpeg","assets/IMG_0575.jpeg","assets/IMG_2331.jpeg","assets/IMG_2266.jpeg","assets/82749DD2-93D4-4530-AFB9-0950745D3C97.png"];
+ let currentProfile=null,selectedAvatar=null,searchVersion=0;
+ function renderProfile(p){
+  currentProfile=p;selectedAvatar=avatars.includes(p.avatar_url)?p.avatar_url:p.role==='owner'?avatars[0]:null;
+  document.getElementById('profile-name').textContent=p.username;
+  document.getElementById('profile-role').textContent=p.role==='owner'?'Founder · Owner':p.role;
+  document.getElementById('profile-bio').value=p.bio||'';
+  const image=document.getElementById('profile-avatar');image.hidden=!selectedAvatar;if(selectedAvatar)image.src=selectedAvatar;
+  const options=document.getElementById('avatar-options');options.replaceChildren();
+  if(p.role==='owner')avatars.forEach((path,i)=>{const b=document.createElement('button'),im=document.createElement('img');im.src=path;im.alt='Exclusive avatar '+(i+1);b.append(im);b.setAttribute('aria-pressed',String(path===selectedAvatar));b.onclick=()=>{selectedAvatar=path;image.src=path;image.hidden=false;options.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));};options.append(b);});
+ }
+ document.getElementById('profile-toggle').onclick=()=>{panel.hidden=!panel.hidden;};
+ document.getElementById('save-profile').onclick=async()=>{if(!currentProfile)return;const patch={bio:document.getElementById('profile-bio').value};if(currentProfile.role==='owner')patch.avatar_url=selectedAvatar;const {data,error}=await db.from('profiles').update(patch).eq('id',currentProfile.id).select('id,username,role,avatar_url,bio').single();if(error){status.textContent='Could not save profile.';return;}renderProfile(data);status.textContent='Profile saved.';};
+ document.getElementById('home-signout').onclick=async()=>{const {error}=await db.auth.signOut();if(!error)location.reload();else status.textContent='Sign out failed.';};
+ document.getElementById('member-search').oninput=async e=>{const q=e.target.value.trim(),v=++searchVersion,out=document.getElementById('member-results');out.replaceChildren();if(!/^[a-zA-Z0-9_]{2,24}$/.test(q))return;const {data,error}=await db.from('profiles').select('username,role').ilike('username',q+'%').limit(20);if(v!==searchVersion)return;if(error){out.textContent='Search unavailable.';return;}for(const p of data){const el=document.createElement('p');el.textContent=p.username;out.append(el);}if(!data.length)out.textContent='No members found.';};
  async function refreshAccount(){
   if(!db){message.textContent='Connection unavailable. Please reload.';return;}
   const {data,error}=await db.auth.getUser();
   if(error||!data.user){account.hidden=true;form.hidden=false;tabs.hidden=false;title.textContent='Come aboard.';return;}
-  const {data:profile,error:profileError}=await db.from('profiles').select('username,role').eq('id',data.user.id).single();
+  const {data:profile,error:profileError}=await db.from('profiles').select('id,username,role,avatar_url,bio').eq('id',data.user.id).single();
+  if(!profileError&&profile){renderProfile(profile);intro.hidden=true;home.hidden=false;hide();window.scrollTo(0,0);return;}
   account.hidden=false;form.hidden=true;tabs.hidden=true;title.textContent='The Crew';
   document.getElementById('account-name').textContent=profile?.username||'Account';
   document.getElementById('account-role').textContent=profileError?'Profile unavailable.':profile.role==='owner'?'Founder · Owner':profile.role;
@@ -175,6 +192,7 @@ main{overflow:clip}
    form.reset();message.textContent='';await refreshAccount();
   }catch{message.textContent='Connection failed. Please try again.';}finally{submit.disabled=false;}
  });
+ if(db)refreshAccount();
 })();
 </script>
 </body>
