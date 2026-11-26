@@ -41,7 +41,7 @@ main{overflow:clip}
 .tabs{display:flex;gap:22px;border-bottom:1px solid #302c25;margin-bottom:24px}
 .tab{padding:0 0 12px;border:0;border-bottom:1px solid transparent;background:none;color:#777;font:10px Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;cursor:pointer}
 .tab[aria-selected="true"]{color:#eee;border-color:var(--gold)}
-.field{display:grid;gap:8px;margin:15px 0}
+[hidden]{display:none!important}.field{display:grid;gap:8px;margin:15px 0}
 .field label{color:#9b9488;font:9px Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase}
 .field input{width:100%;padding:13px 12px;border:1px solid #39352e;background:#030303;color:#f4f1e9;font:14px Arial,sans-serif;border-radius:0}
 .field input:focus{outline:1px solid var(--gold);border-color:var(--gold)}
@@ -77,7 +77,7 @@ main{overflow:clip}
   <h2 class="auth-title" id="auth-title">Come aboard.</h2>
   <div class="tabs" role="tablist" aria-label="Account access">
    <button class="tab" id="signin-tab" role="tab" aria-selected="true" aria-controls="auth-form">Sign in</button>
-   <button class="tab" id="create-tab" role="tab" aria-selected="false" aria-controls="auth-form">Create account</button>
+   <button hidden disabled class="tab" id="create-tab" role="tab" aria-selected="false" aria-controls="auth-form">Create account</button>
   </div>
   <form id="auth-form">
    <div class="field" id="name-field" hidden><label for="display-name">Crew name</label><input id="display-name" name="displayName" autocomplete="nickname"></div>
@@ -86,9 +86,11 @@ main{overflow:clip}
    <button class="submit" id="submit-auth" type="submit">Sign in</button>
    <p class="form-message" id="form-message" aria-live="polite"></p>
   </form>
-  <p class="fineprint">The crew's private quarters are still being prepared.</p>
+  <p class="fineprint">Registration is not open yet.</p>
+ <div id="account-view" hidden><h2 id="account-name"></h2><p id="account-role"></p><button class="submit" id="signout" type="button">Sign out</button></div>
  </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 (() => {
  const departure=document.getElementById('departure');
@@ -132,6 +134,20 @@ main{overflow:clip}
  const submit=document.getElementById('submit-auth');
  const form=document.getElementById('auth-form');
  const message=document.getElementById('form-message');
+ const db=window.supabase?.createClient('https://ivemrhhnlkabqnocreho.supabase.co','sb_publishable_UVv8yWhWE90HBtwArXyh2g_VXETnlKh');
+ const account=document.getElementById('account-view');
+ const tabs=modal.querySelector('.tabs');
+ const title=document.getElementById('auth-title');
+ async function refreshAccount(){
+  if(!db){message.textContent='Connection unavailable. Please reload.';return;}
+  const {data,error}=await db.auth.getUser();
+  if(error||!data.user){account.hidden=true;form.hidden=false;tabs.hidden=false;title.textContent='Come aboard.';return;}
+  const {data:profile,error:profileError}=await db.from('profiles').select('username,role').eq('id',data.user.id).single();
+  account.hidden=false;form.hidden=true;tabs.hidden=true;title.textContent='The Crew';
+  document.getElementById('account-name').textContent=profile?.username||'Account';
+  document.getElementById('account-role').textContent=profileError?'Profile unavailable.':profile.role==='owner'?'Founder · Owner':profile.role;
+ }
+ document.getElementById('signout').addEventListener('click',async()=>{if(!db)return;const {error}=await db.auth.signOut();if(error){document.getElementById('account-role').textContent='Sign out failed. Try again.';return;}await refreshAccount();});
  let mode='signin';
  function setMode(next){
   mode=next;const creating=mode==='create';
@@ -143,15 +159,21 @@ main{overflow:clip}
   submit.textContent=creating?'Create account':'Sign in';
   message.textContent='';
  }
- function show(){modal.classList.add('open');document.body.classList.add('modal-open');setMode('signin');document.getElementById('email').focus();}
+ function show(){modal.classList.add('open');document.body.classList.add('modal-open');setMode('signin');refreshAccount();document.getElementById('email').focus();}
  function hide(){modal.classList.remove('open');document.body.classList.remove('modal-open');open.focus();}
  open.addEventListener('click',show);close.addEventListener('click',hide);
  signin.addEventListener('click',()=>setMode('signin'));create.addEventListener('click',()=>setMode('create'));
  modal.addEventListener('click',e=>{if(e.target===modal)hide();});
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))hide();});
- form.addEventListener('submit',e=>{
+ form.addEventListener('submit',async e=>{
   e.preventDefault();
-  message.textContent='The account system is not connected yet. Your sign-in details have not been sent or saved.';
+  if(!db){message.textContent='Connection unavailable. Please reload.';return;}
+  submit.disabled=true;message.textContent='Signing in…';
+  try{
+   const {error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});
+   if(error){message.textContent='Unable to sign in. Check your credentials and try again.';return;}
+   form.reset();message.textContent='';await refreshAccount();
+  }catch{message.textContent='Connection failed. Please try again.';}finally{submit.disabled=false;}
  });
 })();
 </script>
