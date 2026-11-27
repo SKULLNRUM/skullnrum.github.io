@@ -312,7 +312,7 @@ main{overflow:clip}
  async function registrationState(){const {data,error}=await db.rpc('registration_mode');registrationMode=error?'closed':data;const allowed=registrationMode==='open'||(registrationMode==='invite'&&!!invitation);create.hidden=!allowed;create.disabled=!allowed;note.textContent=allowed?'Verified email required.':'Registration by invitation.';return allowed;}
  async function redeemAdmission(){const button=document.getElementById('admission-submit'),status=document.getElementById('admission-status'),name=document.getElementById('admission-name').value.trim();if(!/^[A-Za-z0-9_]{3,24}$/.test(name)){status.textContent='Use 3–24 letters, numbers or underscores.';return;}button.disabled=true;try{const {error}=await db.rpc('redeem_crew_invitation',{p_token:invitation,p_username:name});if(error){status.textContent='Unable to join. Check your invitation, verified email and username.';return;}sessionStorage.removeItem('crew-invitation');sessionStorage.removeItem('crew-name');invitation='';admission.hidden=true;await refreshAccount();}finally{button.disabled=false;}}
  document.getElementById('admission-submit').onclick=redeemAdmission;
- document.getElementById('accept-invitation').onclick=async()=>{if(!await registrationState()){note.textContent='Registration is closed.';return;}letter.hidden=true;form.hidden=false;tabs.hidden=false;setMode('create');};
+ document.getElementById('accept-invitation').onclick=async()=>{if(!db){note.textContent='Connection unavailable. Please reload.';return;}if(!await registrationState()){note.textContent='Registration is closed.';return;}letter.hidden=true;form.hidden=false;tabs.hidden=false;setMode('create');};
  let mode='signin';
  function setMode(next){
   mode=next;const creating=mode==='create';
@@ -350,7 +350,9 @@ main{overflow:clip}
    form.reset();message.textContent='';await refreshAccount();
   }catch{message.textContent='Connection failed. Please try again.';}finally{submit.disabled=false;}
  });
- if(db){refreshAccount().then(()=>{if(inviteMatch&&!currentProfile&&admission.hidden){modal.classList.add('open');document.body.classList.add('modal-open');letter.hidden=false;form.hidden=true;tabs.hidden=true;}});}
+ function revealInvitation(){modal.classList.add('open');document.body.classList.add('modal-open');letter.hidden=false;form.hidden=true;tabs.hidden=true;title.textContent='A letter awaits.';}
+ if(inviteMatch)revealInvitation();
+ if(db){refreshAccount().then(()=>{if(inviteMatch&&!currentProfile&&admission.hidden)revealInvitation();}).catch(()=>{if(inviteMatch){revealInvitation();note.textContent='Connection unavailable. Please reload.';}});}else if(inviteMatch){note.textContent='Connection unavailable. Please reload.';}
 })();
 </script>
 </body>
