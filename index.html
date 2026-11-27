@@ -84,10 +84,10 @@ main{overflow:clip}
    <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required></div>
    <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" minlength="8" required></div>
    <button class="submit" id="submit-auth" type="submit">Sign in</button>
-   <p class="form-message" id="form-message" aria-live="polite"></p>
+   <button type="button" id="forgot-password">Forgot password?</button><p class="form-message" id="form-message" aria-live="polite"></p>
   </form>
   <p class="fineprint" id="registration-note">Registration by invitation.</p><div id="invitation-letter" hidden style="text-align:center;border:1px solid #665538;padding:22px;margin:12px 0;background:#17130f"><img src="assets/bird-skull.png" alt="SKULLNRUM seal" style="width:80px;height:80px;object-fit:contain"><p style="color:#b9a27d">PRIVATE CORRESPONDENCE</p><h2>By invitation of the Captain</h2><p>You have been summoned to The Crew.</p><button class="submit" id="accept-invitation" type="button">Break the seal</button></div><div id="admission" hidden><label for="admission-name">Crew name</label><input id="admission-name" maxlength="24" autocomplete="nickname"><button class="submit" id="admission-submit" type="button">Join The Crew</button><p id="admission-status" role="status"></p></div>
- <div id="account-view" hidden><h2 id="account-name"></h2><p id="account-role"></p><button class="submit" id="signout" type="button">Sign out</button></div>
+ <div id="recovery-panel" hidden><h2>Recover your account</h2><form id="recovery-form"><label for="new-password">New password</label><input id="new-password" type="password" minlength="8" required autocomplete="new-password"><label for="confirm-password">Confirm password</label><input id="confirm-password" type="password" minlength="8" required autocomplete="new-password"><button class="submit" type="submit">Reset password</button><p id="recovery-status" role="status"></p></form></div><div id="account-view" hidden><h2 id="account-name"></h2><p id="account-role"></p><button class="submit" id="signout" type="button">Sign out</button></div>
  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2"></script>
@@ -134,8 +134,10 @@ main{overflow:clip}
  const submit=document.getElementById('submit-auth');
  const form=document.getElementById('auth-form');
  const message=document.getElementById('form-message');
+ const recoveryHash=new URLSearchParams(location.hash.slice(1));let recovering=recoveryHash.get('type')==='recovery';let recoveryAuthorized=false;const recoveryPanel=document.getElementById('recovery-panel');
  const db=window.supabase?.createClient('https://ivemrhhnlkabqnocreho.supabase.co','sb_publishable_UVv8yWhWE90HBtwArXyh2g_VXETnlKh');
  const account=document.getElementById('account-view');
+ if(db)db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'&&session){recovering=true;recoveryAuthorized=true;setTimeout(showRecovery,0);}});
  const tabs=modal.querySelector('.tabs');
  const title=document.getElementById('auth-title');
  const home=document.getElementById('crew-home'), intro=document.querySelector('main'), panel=document.getElementById('owner-profile'), status=document.getElementById('profile-status');
@@ -291,13 +293,17 @@ main{overflow:clip}
  md.addEventListener('cancel',e=>{e.preventDefault();});
  mc.onclick=async()=>{if(ma.disabled&&mfaEnrollment)return;if(mfaRequired){await db.auth.signOut({scope:'local'});location.reload();return;}if(mfaEnrollment&&mfaFactor)await db.auth.mfa.unenroll({factorId:mfaFactor});clearMfa();md.close();};
  ma.onclick=async()=>{ma.disabled=true;ms.textContent=mfaFactor?'Verifying…':'Preparing authenticator…';try{if(!mfaFactor){const {data,error}=await db.auth.mfa.enroll({factorType:'totp'});if(error)throw error;mfaFactor=data.id;mfaEnrollment=true;mq.src=data.totp.qr_code;mq.hidden=false;mk.textContent=data.totp.secret;mk.hidden=false;ml.hidden=false;ma.textContent='Verify code';ms.textContent='Scan or copy the key, then enter the code.';return;}if(code.value.trim().length!==6||!Array.from(code.value.trim()).every(ch=>ch>='0'&&ch<='9')){ms.textContent='Enter exactly six numeric digits.';return;}const {data,error}=await db.auth.mfa.challenge({factorId:mfaFactor});if(error)throw error;const result=await db.auth.mfa.verify({factorId:mfaFactor,challengeId:data.id,code:code.value.trim()});if(result.error)throw result.error;const required=mfaRequired;clearMfa();md.close();if(required)await refreshAccount();else alert('Authenticator verified.');}catch(e){ms.textContent='Verification failed: '+(e?.message||'Unknown error')+'. Try a fresh code.';}finally{ma.disabled=false;}};
+ function showRecovery(){home.hidden=true;modal.classList.add('open');document.body.classList.add('modal-open');form.hidden=true;tabs.hidden=true;account.hidden=true;letter.hidden=true;admission.hidden=true;recoveryPanel.hidden=false;title.textContent='Account recovery';}
+ document.getElementById('forgot-password').onclick=async()=>{const email=document.getElementById('email');if(!email.value||!email.checkValidity()){message.textContent='Enter your email address first.';email.focus();return;}const b=document.getElementById('forgot-password');b.disabled=true;try{await db.auth.resetPasswordForEmail(email.value.trim(),{redirectTo:location.origin+'/'});message.textContent='If this account exists, check your email for a recovery link.';}catch{message.textContent='Unable to send request. Try again later.';}finally{b.disabled=false;}};
+ document.getElementById('recovery-form').onsubmit=async e=>{e.preventDefault();const status=document.getElementById('recovery-status'),button=e.target.querySelector('button'),password=document.getElementById('new-password').value;if(!recoveryAuthorized){status.textContent='Open a fresh recovery email link.';return;}if(password!==document.getElementById('confirm-password').value){status.textContent='Passwords must match.';return;}button.disabled=true;try{const assurance=await db.auth.mfa.getAuthenticatorAssuranceLevel();if(assurance.error)throw assurance.error;if(assurance.data.nextLevel==='aal2'&&assurance.data.currentLevel!=='aal2'){await openMfa(true);status.textContent='Verify your authenticator, then submit again.';return;}const {error}=await db.auth.updateUser({password});if(error)throw error;await db.auth.signOut({scope:'global'});e.target.reset();recovering=false;recoveryAuthorized=false;location.replace(location.origin+'/');}catch(err){status.textContent=err?.message||'Password reset failed.';}finally{button.disabled=false;}};
  async function refreshAccount(){
+  if(recovering){showRecovery();return;}
   if(!db){message.textContent='Connection unavailable. Please reload.';return;}
   const {data,error}=await db.auth.getUser();
   if(error||!data.user){account.hidden=true;admission.hidden=true;form.hidden=false;tabs.hidden=false;title.textContent='Come aboard.';await registrationState();return;}
   const assurance=await db.auth.mfa.getAuthenticatorAssuranceLevel();if(assurance.error){message.textContent='Unable to verify sign-in security. Reload to retry.';return;}if(assurance.data.nextLevel==='aal2'&&assurance.data.currentLevel!=='aal2'){home.hidden=true;await openMfa(true);return;}
   const {data:profile,error:profileError}=await db.from('profiles').select('id,username,role,avatar_url,bio,is_wing,image_upload_allowed,is_banned,suspended_until').eq('id',data.user.id).single();
-  if(!profileError&&profile){admission.hidden=true;letter.hidden=true;if(restricted(profile)){showRestricted(profile);return;}denied.hidden=true;renderProfile(profile);intro.hidden=true;home.hidden=false;hide();showView('feed');startPresence();window.scrollTo(0,0);loadFeed();return;}if(!denied.hidden){document.getElementById('access-status').textContent='Unable to verify access. Try again.';return;}
+  if(!profileError&&profile){if(profile.role==='owner'&&assurance.data.currentLevel!=='aal2'){home.hidden=true;await openMfa(true);return;}admission.hidden=true;letter.hidden=true;if(restricted(profile)){showRestricted(profile);return;}denied.hidden=true;renderProfile(profile);intro.hidden=true;home.hidden=false;hide();showView('feed');startPresence();window.scrollTo(0,0);loadFeed();return;}if(!denied.hidden){document.getElementById('access-status').textContent='Unable to verify access. Try again.';return;}
   account.hidden=false;form.hidden=true;tabs.hidden=true;title.textContent='The Crew';if(profileError?.code==='PGRST116'&&await registrationState()){modal.classList.add('open');document.body.classList.add('modal-open');letter.hidden=true;admission.hidden=false;document.getElementById('admission-name').value=sessionStorage.getItem('crew-name')||'';}
   document.getElementById('account-name').textContent=profile?.username||'Account';
   document.getElementById('account-role').textContent=profileError?'Profile unavailable.':profile.role==='owner'?'Founder · Owner':profile.role;
@@ -315,7 +321,7 @@ main{overflow:clip}
  document.getElementById('accept-invitation').onclick=async()=>{if(!db){note.textContent='Connection unavailable. Please reload.';return;}if(!await registrationState()){return;}letter.hidden=true;form.hidden=false;tabs.hidden=false;setMode('create');};
  let mode='signin';
  function setMode(next){
-  mode=next;const creating=mode==='create';
+  mode=next;const creating=mode==='create';document.getElementById('forgot-password').hidden=creating;
   signin.setAttribute('aria-selected',String(!creating));
   create.setAttribute('aria-selected',String(creating));
   nameField.hidden=!creating;
