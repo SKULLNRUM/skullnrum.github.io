@@ -86,7 +86,7 @@ main{overflow:clip}
    <button class="submit" id="submit-auth" type="submit">Sign in</button>
    <p class="form-message" id="form-message" aria-live="polite"></p>
   </form>
-  <p class="fineprint">Registration is not open yet.</p>
+  <p class="fineprint" id="registration-note">Registration by invitation.</p><div id="invitation-letter" hidden style="text-align:center;border:1px solid #665538;padding:22px;margin:12px 0;background:#17130f"><img src="assets/bird-skull.png" alt="SKULLNRUM seal" style="width:80px;height:80px;object-fit:contain"><p style="color:#b9a27d">PRIVATE CORRESPONDENCE</p><h2>By invitation of the Captain</h2><p>You have been summoned to The Crew.</p><button class="submit" id="accept-invitation" type="button">Break the seal</button></div><div id="admission" hidden><label for="admission-name">Crew name</label><input id="admission-name" maxlength="24" autocomplete="nickname"><button class="submit" id="admission-submit" type="button">Join The Crew</button><p id="admission-status" role="status"></p></div>
  <div id="account-view" hidden><h2 id="account-name"></h2><p id="account-role"></p><button class="submit" id="signout" type="button">Sign out</button></div>
  </div>
 </div>
@@ -294,15 +294,25 @@ main{overflow:clip}
  async function refreshAccount(){
   if(!db){message.textContent='Connection unavailable. Please reload.';return;}
   const {data,error}=await db.auth.getUser();
-  if(error||!data.user){account.hidden=true;form.hidden=false;tabs.hidden=false;title.textContent='Come aboard.';return;}
+  if(error||!data.user){account.hidden=true;admission.hidden=true;form.hidden=false;tabs.hidden=false;title.textContent='Come aboard.';await registrationState();return;}
   const assurance=await db.auth.mfa.getAuthenticatorAssuranceLevel();if(assurance.error){message.textContent='Unable to verify sign-in security. Reload to retry.';return;}if(assurance.data.nextLevel==='aal2'&&assurance.data.currentLevel!=='aal2'){home.hidden=true;await openMfa(true);return;}
   const {data:profile,error:profileError}=await db.from('profiles').select('id,username,role,avatar_url,bio,is_wing,image_upload_allowed,is_banned,suspended_until').eq('id',data.user.id).single();
-  if(!profileError&&profile){if(restricted(profile)){showRestricted(profile);return;}denied.hidden=true;renderProfile(profile);intro.hidden=true;home.hidden=false;hide();showView('feed');startPresence();window.scrollTo(0,0);loadFeed();return;}if(!denied.hidden){document.getElementById('access-status').textContent='Unable to verify access. Try again.';return;}
-  account.hidden=false;form.hidden=true;tabs.hidden=true;title.textContent='The Crew';
+  if(!profileError&&profile){admission.hidden=true;letter.hidden=true;if(restricted(profile)){showRestricted(profile);return;}denied.hidden=true;renderProfile(profile);intro.hidden=true;home.hidden=false;hide();showView('feed');startPresence();window.scrollTo(0,0);loadFeed();return;}if(!denied.hidden){document.getElementById('access-status').textContent='Unable to verify access. Try again.';return;}
+  account.hidden=false;form.hidden=true;tabs.hidden=true;title.textContent='The Crew';if(profileError?.code==='PGRST116'&&await registrationState()){modal.classList.add('open');document.body.classList.add('modal-open');letter.hidden=true;admission.hidden=false;document.getElementById('admission-name').value=sessionStorage.getItem('crew-name')||'';}
   document.getElementById('account-name').textContent=profile?.username||'Account';
   document.getElementById('account-role').textContent=profileError?'Profile unavailable.':profile.role==='owner'?'Founder · Owner':profile.role;
  }
  document.getElementById('signout').addEventListener('click',async()=>{if(!db)return;const {error}=await db.auth.signOut();if(error){document.getElementById('account-role').textContent='Sign out failed. Try again.';return;}await refreshAccount();});
+ const inviteMatch=location.hash.match(/^#invite=([A-Za-z0-9_-]{16,256})$/);
+ let invitation=inviteMatch?.[1]||'';
+ if(invitation){sessionStorage.setItem('crew-invitation',invitation);history.replaceState(null,'',location.pathname+location.search);}
+ else invitation=sessionStorage.getItem('crew-invitation')||'';
+ let registrationMode='closed';
+ const letter=document.getElementById('invitation-letter'),admission=document.getElementById('admission'),note=document.getElementById('registration-note');
+ async function registrationState(){const {data,error}=await db.rpc('registration_mode');registrationMode=error?'closed':data;const allowed=registrationMode==='open'||(registrationMode==='invite'&&!!invitation);create.hidden=!allowed;create.disabled=!allowed;note.textContent=allowed?'Verified email required.':'Registration by invitation.';return allowed;}
+ async function redeemAdmission(){const button=document.getElementById('admission-submit'),status=document.getElementById('admission-status'),name=document.getElementById('admission-name').value.trim();if(!/^[A-Za-z0-9_]{3,24}$/.test(name)){status.textContent='Use 3–24 letters, numbers or underscores.';return;}button.disabled=true;try{const {error}=await db.rpc('redeem_crew_invitation',{p_token:invitation,p_username:name});if(error){status.textContent='Unable to join. Check your invitation, verified email and username.';return;}sessionStorage.removeItem('crew-invitation');sessionStorage.removeItem('crew-name');invitation='';admission.hidden=true;await refreshAccount();}finally{button.disabled=false;}}
+ document.getElementById('admission-submit').onclick=redeemAdmission;
+ document.getElementById('accept-invitation').onclick=async()=>{if(!await registrationState()){note.textContent='Registration is closed.';return;}letter.hidden=true;form.hidden=false;tabs.hidden=false;setMode('create');};
  let mode='signin';
  function setMode(next){
   mode=next;const creating=mode==='create';
@@ -325,12 +335,22 @@ main{overflow:clip}
   if(!db){message.textContent='Connection unavailable. Please reload.';return;}
   submit.disabled=true;message.textContent='Signing in…';
   try{
+   if(mode==='create'){
+    if(!await registrationState()){message.textContent='Registration closed.';return;}
+    const name=document.getElementById('display-name').value.trim();
+    if(!/^[A-Za-z0-9_]{3,24}$/.test(name)){message.textContent='Use 3–24 letters, numbers or underscores.';return;}
+    sessionStorage.setItem('crew-name',name);
+    const {data,error}=await db.auth.signUp({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value,options:{emailRedirectTo:location.origin+'/'}});
+    if(error){message.textContent='Unable to register: '+error.message;return;}
+    if(data.session){await refreshAccount();return;}
+    setMode('signin');message.textContent='Check your email to verify, then sign in here. Keep your invitation link.';return;
+   }
    const {error}=await db.auth.signInWithPassword({email:document.getElementById('email').value.trim(),password:document.getElementById('password').value});
    if(error){message.textContent='Unable to sign in. Check your credentials and try again.';return;}
    form.reset();message.textContent='';await refreshAccount();
   }catch{message.textContent='Connection failed. Please try again.';}finally{submit.disabled=false;}
  });
- if(db)refreshAccount();
+ if(db){refreshAccount().then(()=>{if(inviteMatch&&!currentProfile&&admission.hidden){modal.classList.add('open');document.body.classList.add('modal-open');letter.hidden=false;form.hidden=true;tabs.hidden=true;}});}
 })();
 </script>
 </body>
