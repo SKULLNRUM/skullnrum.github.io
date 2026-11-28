@@ -1,15 +1,17 @@
-# Restricted — first musical relic
+# Restricted — approved audiovisual archive
+Black, titleless page; one full, uncropped artwork per unreleased song, snippet or voice recording. No visible track metadata or popularity counts. No frames or decorative clutter.
 
-Approved creative direction: one artwork per unreleased track or secret snippet, with a discreet play control. First relic uses the supplied many-faced figure in its original pale green and purple negative versions. Preserve the original low-resolution aesthetic.
+## First relic
+Use the original supplied pale green and purple negative many-faced images, preserving composition and low-resolution character. Approved preview: SKULLNRUM_relic_preview.mp4 (60 FPS, 26 seconds). Idle green. Independently staggered natural eyelid motion. Hold green 2.5 seconds after play; over 9 seconds reveal purple outward from central eyes with a soft radial transition. Remain purple while playing. Pause freezes visual time; resume continues; end returns gradually to green. No red flashes, artificial grain, cropping, zoom or replacement faces. Reduced-motion mode static. Future artworks can have individual animations.
 
-Playback states:
-- Idle: original pale green image.
-- Playing: slowly transition toward the purple negative.
-- During playback: individual eyes blink independently at irregular intervals. Retain the dark purple negative during playback; no crimson tint or red flashes.
-- Paused: freeze the animation at its current state.
-- Finished: gradually return to the original pale image.
-- Reduced motion: static artwork, no transitions or blinking. Avoid rapid flashes, abrupt high-contrast changes and excessive glitch effects.
+## Controls
+Only play/pause and next below artwork; no previous. Use supplied pirate flag musical-note artwork as play/pause control, custom non-emoji next symbol. Automatically advance; playback persists across in-site navigation, stops when access revoked or signed out.
 
-This is a design specification, not an implemented player. Original image assets, audio, eye masks and access controls must be supplied/implemented when Restricted is built. Do not publish unreleased audio in the public repository. Confirm artwork usage rights before publishing.
+## Leave Your Mark
+Original supplied skull artwork (IMG_2649.jpeg), small bottom-right overlay on artwork, ivory unmarked and crimson #ad292e marked. Accessible touch target. On selection contract 0–100ms, crimson reveal and forehead fracture 100–450ms, settle 450–700ms. Retain crack while selected; heal and restore ivory when deselected. Reduced-motion mode static. Persist per member and recording. No public counts or reaction lists.
 
-Development order: finalize Crew and Restricted navigation emblems, Message in a Bottle, Live Chat, then Restricted musical relics. No navigation artwork changes authorized by this note.
+## Privacy and Signals
+Founder-only private Signal identifying member, recording, timestamp. Deduplicate repeated toggles. Backend derives actor from auth; member can only read/write own marks; Founder access requires existing MFA/role gates. No aggregate public reads. Audio in private Supabase storage, never public GitHub. Short-lived authorized signed URLs; no claim of DRM or prevention of recording. Verify RLS, permissions, notification deduplication, access revocation and playback before release.
+
+## Status
+Approved design. Existing player foundation is committed. Original artwork/video and custom icon assets need transfer; private audio bucket, recording manifest, mark persistence and Signals backend require implementation and verification. No music supplied yet. Do not present these as functional until tested.
